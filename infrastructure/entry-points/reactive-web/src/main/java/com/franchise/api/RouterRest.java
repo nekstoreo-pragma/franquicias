@@ -22,11 +22,20 @@ public class RouterRest {
             method = {RequestMethod.POST},
             beanClass = FranchiseHandler.class,
             beanMethod = "createFranchise"
+        ),
+        @RouterOperation(
+            path = "/api/v1/franchises/{franchiseId}/branches",
+            method = {RequestMethod.POST},
+            beanClass = BranchHandler.class,
+            beanMethod = "addBranch"
         )
     })
     @Bean
-    public RouterFunction<ServerResponse> routerFunction(FranchiseHandler franchiseHandler) {
+    public RouterFunction<ServerResponse> routerFunction(FranchiseHandler franchiseHandler,
+                                                         BranchHandler branchHandler) {
         return route(POST("/api/v1/franchises").and(accept(MediaType.APPLICATION_JSON)),
-                franchiseHandler::createFranchise);
+                        franchiseHandler::createFranchise)
+                .andRoute(POST("/api/v1/franchises/{franchiseId}/branches").and(accept(MediaType.APPLICATION_JSON)),
+                        branchHandler::addBranch);
     }
 }
