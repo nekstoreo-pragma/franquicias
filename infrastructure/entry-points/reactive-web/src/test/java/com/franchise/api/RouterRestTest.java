@@ -1,60 +1,53 @@
 package com.franchise.api;
 
-import org.assertj.core.api.Assertions;
+import com.franchise.api.dto.CreateFranchiseRequest;
+import com.franchise.model.franchise.Franchise;
+import com.franchise.usecase.franchise.FranchiseUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
-@ContextConfiguration(classes = {RouterRest.class, Handler.class})
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class})
 @WebFluxTest
 class RouterRestTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
-    @Test
-    void testListenGETUseCase() {
-        webTestClient.get()
-                .uri("/api/usecase/path")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
-    }
+    @MockitoBean
+    private FranchiseUseCase franchiseUseCase;
 
     @Test
-    void testListenGETOtherUseCase() {
-        webTestClient.get()
-                .uri("/api/otherusercase/path")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
-    }
+    void createFranchise_validRequest_returns201() {
+        when(franchiseUseCase.create(any())).thenReturn(
+                Mono.just(Franchise.builder().id("id-1").name("Test").build()));
 
-    @Test
-    void testListenPOSTUseCase() {
         webTestClient.post()
-                .uri("/api/usecase/otherpath")
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue("")
+                .uri("/api/v1/franchises")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new CreateFranchiseRequest("Test"))
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("id-1")
+                .jsonPath("$.name").isEqualTo("Test");
+    }
+
+    @Test
+    void createFranchise_blankName_returns400() {
+        webTestClient.post()
+                .uri("/api/v1/franchises")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new CreateFranchiseRequest(""))
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 }
