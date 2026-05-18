@@ -1,7 +1,7 @@
 package com.franchise.dynamodb.helper;
 
-import com.franchise.dynamodb.DynamoDBTemplateAdapter;
-import com.franchise.dynamodb.ModelEntity;
+import com.franchise.dynamodb.franchise.FranchiseEntity;
+import com.franchise.model.franchise.Franchise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -12,14 +12,19 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 class TemplateAdapterOperationsTest {
+
+    static class TestAdapter extends TemplateAdapterOperations<Franchise, String, FranchiseEntity> {
+        public TestAdapter(DynamoDbEnhancedAsyncClient client, ObjectMapper mapper) {
+            super(client, mapper, entity -> mapper.map(entity, Franchise.class), "franchises");
+        }
+    }
 
     @Mock
     private DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient;
@@ -28,73 +33,60 @@ class TemplateAdapterOperationsTest {
     private ObjectMapper mapper;
 
     @Mock
-    private DynamoDbAsyncTable<ModelEntity> customerTable;
+    private DynamoDbAsyncTable<FranchiseEntity> table;
 
-    private ModelEntity modelEntity;
+    private FranchiseEntity franchiseEntity;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        when(dynamoDbEnhancedAsyncClient.table("table_name", TableSchema.fromBean(ModelEntity.class)))
-                .thenReturn(customerTable);
-
-        modelEntity = new ModelEntity();
-        modelEntity.setId("id");
-        modelEntity.setAtr1("atr1");
-    }
-
-    @Test
-    void modelEntityPropertiesMustNotBeNull() {
-        ModelEntity modelEntityUnderTest = new ModelEntity("id", "atr1");
-
-        assertNotNull(modelEntityUnderTest.getId());
-        assertNotNull(modelEntityUnderTest.getAtr1());
+        when(dynamoDbEnhancedAsyncClient.table("franchises", TableSchema.fromBean(FranchiseEntity.class)))
+                .thenReturn(table);
+        franchiseEntity = new FranchiseEntity();
+        franchiseEntity.setId("id-1");
+        franchiseEntity.setName("Test");
     }
 
     @Test
     void testSave() {
-        when(customerTable.putItem(modelEntity)).thenReturn(CompletableFuture.runAsync(()->{}));
-        when(mapper.map(modelEntity, ModelEntity.class)).thenReturn(modelEntity);
+        Franchise franchise = Franchise.builder().id("id-1").name("Test").build();
+        when(mapper.map(franchise, FranchiseEntity.class)).thenReturn(franchiseEntity);
+        when(table.putItem(franchiseEntity)).thenReturn(CompletableFuture.runAsync(() -> {}));
 
-        DynamoDBTemplateAdapter dynamoDBTemplateAdapter =
-                new DynamoDBTemplateAdapter(dynamoDbEnhancedAsyncClient, mapper);
+        TestAdapter adapter = new TestAdapter(dynamoDbEnhancedAsyncClient, mapper);
 
-        StepVerifier.create(dynamoDBTemplateAdapter.save(modelEntity))
+        StepVerifier.create(adapter.save(franchise))
                 .expectNextCount(1)
                 .verifyComplete();
     }
 
     @Test
     void testGetById() {
-        String id = "id";
+        Franchise franchise = Franchise.builder().id("id-1").name("Test").build();
+        when(table.getItem(Key.builder().partitionValue(
+                AttributeValue.builder().s("id-1").build()).build()))
+                .thenReturn(CompletableFuture.completedFuture(franchiseEntity));
+        when(mapper.map(franchiseEntity, Franchise.class)).thenReturn(franchise);
 
-        when(customerTable.getItem(
-                Key.builder().partitionValue(AttributeValue.builder().s(id).build()).build()))
-                .thenReturn(CompletableFuture.completedFuture(modelEntity));
-        when(mapper.map(modelEntity, Object.class)).thenReturn("value");
+        TestAdapter adapter = new TestAdapter(dynamoDbEnhancedAsyncClient, mapper);
 
-        DynamoDBTemplateAdapter dynamoDBTemplateAdapter =
-                new DynamoDBTemplateAdapter(dynamoDbEnhancedAsyncClient, mapper);
-
-        StepVerifier.create(dynamoDBTemplateAdapter.getById("id"))
-                .expectNext("value")
+        StepVerifier.create(adapter.getById("id-1"))
+                .expectNextMatches(f -> "id-1".equals(f.getId()))
                 .verifyComplete();
     }
 
     @Test
     void testDelete() {
-        when(mapper.map(modelEntity, ModelEntity.class)).thenReturn(modelEntity);
-        when(mapper.map(modelEntity, Object.class)).thenReturn("value");
+        Franchise franchise = Franchise.builder().id("id-1").name("Test").build();
+        when(mapper.map(franchise, FranchiseEntity.class)).thenReturn(franchiseEntity);
+        when(mapper.map(franchiseEntity, Franchise.class)).thenReturn(franchise);
+        when(table.deleteItem(franchiseEntity))
+                .thenReturn(CompletableFuture.completedFuture(franchiseEntity));
 
-        when(customerTable.deleteItem(modelEntity))
-                .thenReturn(CompletableFuture.completedFuture(modelEntity));
+        TestAdapter adapter = new TestAdapter(dynamoDbEnhancedAsyncClient, mapper);
 
-        DynamoDBTemplateAdapter dynamoDBTemplateAdapter =
-                new DynamoDBTemplateAdapter(dynamoDbEnhancedAsyncClient, mapper);
-
-        StepVerifier.create(dynamoDBTemplateAdapter.delete(modelEntity))
-                .expectNext("value")
+        StepVerifier.create(adapter.delete(franchise))
+                .expectNextMatches(f -> "id-1".equals(f.getId()))
                 .verifyComplete();
     }
 }
