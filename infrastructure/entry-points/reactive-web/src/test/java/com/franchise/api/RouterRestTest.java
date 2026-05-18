@@ -1,11 +1,14 @@
 package com.franchise.api;
 
 import com.franchise.api.dto.AddBranchRequest;
+import com.franchise.api.dto.AddProductRequest;
 import com.franchise.api.dto.CreateFranchiseRequest;
 import com.franchise.model.branch.Branch;
 import com.franchise.model.franchise.Franchise;
+import com.franchise.model.product.Product;
 import com.franchise.usecase.branch.BranchUseCase;
 import com.franchise.usecase.franchise.FranchiseUseCase;
+import com.franchise.usecase.product.ProductUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -21,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class})
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class, ProductHandler.class})
 @WebFluxTest
 class RouterRestTest {
 
@@ -33,6 +36,9 @@ class RouterRestTest {
 
     @MockitoBean
     private BranchUseCase branchUseCase;
+
+    @MockitoBean
+    private ProductUseCase productUseCase;
 
     @Test
     void createFranchise_validRequest_returns201() {
@@ -95,6 +101,55 @@ class RouterRestTest {
                 .uri("/api/v1/franchises/f-1/branches")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new AddBranchRequest(""))
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void addProduct_validRequest_returns201() {
+        when(productUseCase.addProduct(eq("b-1"), any())).thenReturn(
+                Mono.just(Product.builder().id("p-1").name("Burger").stock(10).branchId("b-1").build()));
+
+        webTestClient.post()
+                .uri("/api/v1/branches/b-1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new AddProductRequest("Burger", 10))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("p-1")
+                .jsonPath("$.branchId").isEqualTo("b-1");
+    }
+
+    @Test
+    void addProduct_branchNotFound_returns404() {
+        when(productUseCase.addProduct(eq("missing"), any()))
+                .thenReturn(Mono.error(new NoSuchElementException("Branch not found")));
+
+        webTestClient.post()
+                .uri("/api/v1/branches/missing/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new AddProductRequest("Burger", 10))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void addProduct_blankName_returns400() {
+        webTestClient.post()
+                .uri("/api/v1/branches/b-1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new AddProductRequest("", 10))
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void addProduct_negativeStock_returns400() {
+        webTestClient.post()
+                .uri("/api/v1/branches/b-1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new AddProductRequest("Burger", -1))
                 .exchange()
                 .expectStatus().isBadRequest();
     }

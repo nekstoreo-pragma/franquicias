@@ -24,33 +24,27 @@ public class RouterRest {
             beanMethod = "createFranchise"
         ),
         @RouterOperation(
-<<<<<<< HEAD
             path = "/api/v1/franchises/{franchiseId}/branches",
             method = {RequestMethod.POST},
             beanClass = BranchHandler.class,
             beanMethod = "addBranch"
-=======
+        ),
+        @RouterOperation(
             path = "/api/v1/branches/{branchId}/products",
             method = {RequestMethod.POST},
             beanClass = ProductHandler.class,
             beanMethod = "addProduct"
->>>>>>> b5305b6 (feat: wire add product http handler and route)
         )
     })
     @Bean
     public RouterFunction<ServerResponse> routerFunction(FranchiseHandler franchiseHandler,
-<<<<<<< HEAD
-                                                         BranchHandler branchHandler) {
-        return route(POST("/api/v1/franchises").and(accept(MediaType.APPLICATION_JSON)),
-                        franchiseHandler::createFranchise)
-                .andRoute(POST("/api/v1/franchises/{franchiseId}/branches").and(accept(MediaType.APPLICATION_JSON)),
-                        branchHandler::addBranch);
-=======
+                                                         BranchHandler branchHandler,
                                                          ProductHandler productHandler) {
         return route(POST("/api/v1/franchises").and(accept(MediaType.APPLICATION_JSON)),
                         franchiseHandler::createFranchise)
+                .andRoute(POST("/api/v1/franchises/{franchiseId}/branches").and(accept(MediaType.APPLICATION_JSON)),
+                        branchHandler::addBranch)
                 .andRoute(POST("/api/v1/branches/{branchId}/products").and(accept(MediaType.APPLICATION_JSON)),
                         productHandler::addProduct);
->>>>>>> b5305b6 (feat: wire add product http handler and route)
     }
 }
