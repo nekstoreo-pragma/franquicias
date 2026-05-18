@@ -1,9 +1,11 @@
 package com.franchise.api.config;
 
+import com.franchise.api.BranchHandler;
 import com.franchise.api.FranchiseHandler;
 import com.franchise.api.RouterRest;
 import com.franchise.api.dto.CreateFranchiseRequest;
 import com.franchise.model.franchise.Franchise;
+import com.franchise.usecase.branch.BranchUseCase;
 import com.franchise.usecase.franchise.FranchiseUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,7 @@ import reactor.core.publisher.Mono;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class})
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class})
 @WebFluxTest
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class ConfigTest {
@@ -28,6 +30,9 @@ class ConfigTest {
 
     @MockitoBean
     private FranchiseUseCase franchiseUseCase;
+
+    @MockitoBean
+    private BranchUseCase branchUseCase;
 
     @Test
     void securityHeadersShouldBePresentOnAllResponses() {
