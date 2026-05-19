@@ -1,0 +1,12 @@
+package com.franchise.model.branch.gateways;
+
+import com.franchise.model.branch.Branch;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+public interface BranchRepository {
+    Mono<Branch> save(Branch branch);
+    Mono<Branch> findById(String id);
+    Flux<Branch> findByFranchiseId(String franchiseId);
+    Mono<Branch> update(Branch branch);
+}

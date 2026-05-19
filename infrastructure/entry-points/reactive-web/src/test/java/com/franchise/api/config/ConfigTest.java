@@ -1,15 +1,28 @@
 package com.franchise.api.config;
 
-import com.franchise.api.Handler;
+import com.franchise.api.BranchHandler;
+import com.franchise.api.FranchiseHandler;
+import com.franchise.api.ProductHandler;
 import com.franchise.api.RouterRest;
+import com.franchise.api.dto.CreateFranchiseRequest;
+import com.franchise.model.franchise.Franchise;
+import com.franchise.usecase.branch.BranchUseCase;
+import com.franchise.usecase.franchise.FranchiseUseCase;
+import com.franchise.usecase.product.ProductUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
-@ContextConfiguration(classes = {RouterRest.class, Handler.class})
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class, ProductHandler.class})
 @WebFluxTest
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class ConfigTest {
@@ -17,12 +30,25 @@ class ConfigTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    @MockitoBean
+    private FranchiseUseCase franchiseUseCase;
+
+    @MockitoBean
+    private BranchUseCase branchUseCase;
+
+    @MockitoBean
+    private ProductUseCase productUseCase;
+
     @Test
-    void corsConfigurationShouldAllowOrigins() {
-        webTestClient.get()
-                .uri("/api/usecase/path")
+    void securityHeadersShouldBePresentOnAllResponses() {
+        when(franchiseUseCase.create(any())).thenReturn(
+                Mono.just(Franchise.builder().id("id-1").name("Test").build()));
+
+        webTestClient.post()
+                .uri("/api/v1/franchises")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new CreateFranchiseRequest("Test"))
                 .exchange()
-                .expectStatus().isOk()
                 .expectHeader().valueEquals("Content-Security-Policy",
                         "default-src 'self'; frame-ancestors 'self'; form-action 'self'")
                 .expectHeader().valueEquals("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
