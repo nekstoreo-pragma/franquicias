@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -34,6 +35,12 @@ public class RouterRest {
             method = {RequestMethod.POST},
             beanClass = ProductHandler.class,
             beanMethod = "addProduct"
+        ),
+        @RouterOperation(
+            path = "/api/v1/products/{productId}",
+            method = {RequestMethod.DELETE},
+            beanClass = ProductHandler.class,
+            beanMethod = "deleteProduct"
         )
     })
     @Bean
@@ -45,6 +52,8 @@ public class RouterRest {
                 .andRoute(POST("/api/v1/franchises/{franchiseId}/branches").and(accept(MediaType.APPLICATION_JSON)),
                         branchHandler::addBranch)
                 .andRoute(POST("/api/v1/branches/{branchId}/products").and(accept(MediaType.APPLICATION_JSON)),
-                        productHandler::addProduct);
+                        productHandler::addProduct)
+                .andRoute(DELETE("/api/v1/products/{productId}"),
+                        productHandler::deleteProduct);
     }
 }

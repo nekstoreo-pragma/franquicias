@@ -18,6 +18,14 @@ public class ProductHandler {
 
     private final ProductUseCase productUseCase;
 
+    public Mono<ServerResponse> deleteProduct(ServerRequest request) {
+        String productId = request.pathVariable("productId");
+        return productUseCase.removeProduct(productId)
+                .then(ServerResponse.noContent().build())
+                .onErrorResume(e -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .bodyValue("An error occurred"));
+    }
+
     public Mono<ServerResponse> addProduct(ServerRequest request) {
         String branchId = request.pathVariable("branchId");
         return request.bodyToMono(AddProductRequest.class)
