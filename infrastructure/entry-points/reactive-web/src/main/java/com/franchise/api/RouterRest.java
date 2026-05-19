@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
+import static org.springframework.web.reactive.function.server.RequestPredicates.PATCH;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -41,6 +42,12 @@ public class RouterRest {
             method = {RequestMethod.DELETE},
             beanClass = ProductHandler.class,
             beanMethod = "deleteProduct"
+        ),
+        @RouterOperation(
+            path = "/api/v1/products/{productId}/stock",
+            method = {RequestMethod.PATCH},
+            beanClass = ProductHandler.class,
+            beanMethod = "updateProductStock"
         )
     })
     @Bean
@@ -54,6 +61,8 @@ public class RouterRest {
                 .andRoute(POST("/api/v1/branches/{branchId}/products").and(accept(MediaType.APPLICATION_JSON)),
                         productHandler::addProduct)
                 .andRoute(DELETE("/api/v1/products/{productId}"),
-                        productHandler::deleteProduct);
+                        productHandler::deleteProduct)
+                .andRoute(PATCH("/api/v1/products/{productId}/stock").and(accept(MediaType.APPLICATION_JSON)),
+                        productHandler::updateProductStock);
     }
 }
