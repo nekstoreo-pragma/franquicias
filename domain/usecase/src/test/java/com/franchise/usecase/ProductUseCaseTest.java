@@ -70,6 +70,34 @@ class ProductUseCaseTest {
     }
 
     @Test
+    void updateStock_productFound_returnsUpdated() {
+        Product existing = Product.builder().id("p-1").name("Burger").stock(10).branchId("b-1").build();
+        Product updated = existing.toBuilder().stock(50).build();
+        when(productRepository.findById("p-1")).thenReturn(Mono.just(existing));
+        when(productRepository.update(any())).thenReturn(Mono.just(updated));
+
+        StepVerifier.create(productUseCase.updateStock("p-1", 50))
+                .expectNextMatches(p -> p.getStock() == 50)
+                .verifyComplete();
+    }
+
+    @Test
+    void updateStock_productNotFound_propagatesError() {
+        when(productRepository.findById("missing")).thenReturn(Mono.empty());
+
+        StepVerifier.create(productUseCase.updateStock("missing", 10))
+                .expectError(NoSuchElementException.class)
+                .verify();
+    }
+
+    @Test
+    void updateStock_negativeStock_returnsIllegalArgumentError() {
+        StepVerifier.create(productUseCase.updateStock("p-1", -5))
+                .expectError(IllegalArgumentException.class)
+                .verify();
+    }
+
+    @Test
     void removeProduct_callsDelete() {
         when(productRepository.delete("p-1")).thenReturn(Mono.empty());
 
