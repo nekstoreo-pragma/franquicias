@@ -3,6 +3,8 @@ package com.franchise.dynamodb.branch;
 import com.franchise.dynamodb.helper.TemplateAdapterOperations;
 import com.franchise.model.branch.Branch;
 import com.franchise.model.branch.gateways.BranchRepository;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -18,18 +20,23 @@ import java.util.UUID;
 public class BranchAdapter extends TemplateAdapterOperations<Branch, String, BranchEntity>
         implements BranchRepository {
 
-    public BranchAdapter(DynamoDbEnhancedAsyncClient client, ObjectMapper mapper) {
+    private final CircuitBreaker circuitBreaker;
+
+    public BranchAdapter(DynamoDbEnhancedAsyncClient client, ObjectMapper mapper, CircuitBreaker dynamoDbCircuitBreaker) {
         super(client, mapper, entity -> mapper.map(entity, Branch.class), "branches", "franchiseId-index");
+        this.circuitBreaker = dynamoDbCircuitBreaker;
     }
 
     @Override
     public Mono<Branch> save(Branch branch) {
-        return super.save(branch.toBuilder().id(UUID.randomUUID().toString()).build());
+        return super.save(branch.toBuilder().id(UUID.randomUUID().toString()).build())
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker));
     }
 
     @Override
     public Mono<Branch> findById(String id) {
-        return getById(id);
+        return getById(id)
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker));
     }
 
     @Override
@@ -39,11 +46,13 @@ public class BranchAdapter extends TemplateAdapterOperations<Branch, String, Bra
                         Key.builder().partitionValue(franchiseId).build()))
                 .build();
         return queryByIndex(query, "franchiseId-index")
-                .flatMapMany(Flux::fromIterable);
+                .flatMapMany(Flux::fromIterable)
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker));
     }
 
     @Override
     public Mono<Branch> update(Branch branch) {
-        return super.save(branch);
+        return super.save(branch)
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker));
     }
 }
