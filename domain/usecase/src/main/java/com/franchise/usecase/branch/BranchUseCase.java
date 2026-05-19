@@ -20,4 +20,13 @@ public class BranchUseCase {
                 .flatMap(franchise -> branchRepository.save(
                         branch.toBuilder().franchiseId(franchiseId).build()));
     }
+
+    public Mono<Branch> updateName(String id, String name) {
+        if (name == null || name.isBlank()) {
+            return Mono.error(new IllegalArgumentException("Branch name cannot be blank"));
+        }
+        return branchRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Branch not found: " + id)))
+                .flatMap(branch -> branchRepository.update(branch.toBuilder().name(name).build()));
+    }
 }
