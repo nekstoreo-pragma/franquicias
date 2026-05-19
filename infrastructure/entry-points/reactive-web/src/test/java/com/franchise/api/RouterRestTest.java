@@ -6,6 +6,7 @@ import com.franchise.api.dto.CreateFranchiseRequest;
 import com.franchise.api.dto.UpdateNameRequest;
 import com.franchise.api.dto.UpdateStockRequest;
 import com.franchise.model.branch.Branch;
+import com.franchise.model.franchise.BranchTopProduct;
 import com.franchise.model.franchise.Franchise;
 import com.franchise.model.product.Product;
 import com.franchise.usecase.branch.BranchUseCase;
@@ -202,6 +203,35 @@ class RouterRestTest {
                 .bodyValue(new UpdateStockRequest(-1))
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void getTopProductPerBranch_returns200WithList() {
+        Branch branch = Branch.builder().id("b-1").name("Norte").franchiseId("f-1").build();
+        Product top = Product.builder().id("p-1").name("Whopper").stock(50).branchId("b-1").build();
+        BranchTopProduct result = BranchTopProduct.builder().branch(branch).topProduct(top).build();
+
+        when(franchiseUseCase.getTopProductPerBranch(eq("f-1")))
+                .thenReturn(Mono.just(java.util.List.of(result)));
+
+        webTestClient.get()
+                .uri("/api/v1/franchises/f-1/top-products")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$[0].branch.id").isEqualTo("b-1")
+                .jsonPath("$[0].topProduct.stock").isEqualTo(50);
+    }
+
+    @Test
+    void getTopProductPerBranch_franchiseNotFound_returns404() {
+        when(franchiseUseCase.getTopProductPerBranch(eq("missing")))
+                .thenReturn(Mono.error(new NoSuchElementException("Franchise not found")));
+
+        webTestClient.get()
+                .uri("/api/v1/franchises/missing/top-products")
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test

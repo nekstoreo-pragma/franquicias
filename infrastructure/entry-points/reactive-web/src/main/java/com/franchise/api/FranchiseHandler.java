@@ -33,6 +33,16 @@ public class FranchiseHandler {
                         .bodyValue("An error occurred"));
     }
 
+    public Mono<ServerResponse> getTopProductPerBranch(ServerRequest request) {
+        String franchiseId = request.pathVariable("franchiseId");
+        return franchiseUseCase.getTopProductPerBranch(franchiseId)
+                .flatMap(list -> ServerResponse.ok().bodyValue(list))
+                .onErrorResume(NoSuchElementException.class, e ->
+                        ServerResponse.status(HttpStatus.NOT_FOUND).bodyValue("Franchise not found"))
+                .onErrorResume(e -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .bodyValue("An error occurred"));
+    }
+
     public Mono<ServerResponse> updateFranchiseName(ServerRequest request) {
         String id = request.pathVariable("id");
         return request.bodyToMono(UpdateNameRequest.class)

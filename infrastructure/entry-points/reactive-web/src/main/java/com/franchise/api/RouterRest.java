@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.PATCH;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
@@ -50,6 +51,12 @@ public class RouterRest {
             beanMethod = "updateProductStock"
         ),
         @RouterOperation(
+            path = "/api/v1/franchises/{franchiseId}/top-products",
+            method = {RequestMethod.GET},
+            beanClass = FranchiseHandler.class,
+            beanMethod = "getTopProductPerBranch"
+        ),
+        @RouterOperation(
             path = "/api/v1/franchises/{id}/name",
             method = {RequestMethod.PATCH},
             beanClass = FranchiseHandler.class,
@@ -82,6 +89,8 @@ public class RouterRest {
                         productHandler::deleteProduct)
                 .andRoute(PATCH("/api/v1/products/{productId}/stock").and(accept(MediaType.APPLICATION_JSON)),
                         productHandler::updateProductStock)
+                .andRoute(GET("/api/v1/franchises/{franchiseId}/top-products"),
+                        franchiseHandler::getTopProductPerBranch)
                 .andRoute(PATCH("/api/v1/franchises/{id}/name").and(accept(MediaType.APPLICATION_JSON)),
                         franchiseHandler::updateFranchiseName)
                 .andRoute(PATCH("/api/v1/branches/{id}/name").and(accept(MediaType.APPLICATION_JSON)),
