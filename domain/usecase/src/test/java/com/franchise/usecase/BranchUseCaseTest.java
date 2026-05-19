@@ -61,4 +61,32 @@ class BranchUseCaseTest {
                 .expectError(NoSuchElementException.class)
                 .verify();
     }
+
+    @Test
+    void updateName_branchFound_returnsUpdated() {
+        Branch existing = Branch.builder().id("b-1").name("Old").franchiseId("f-1").build();
+        Branch updated = existing.toBuilder().name("New").build();
+        when(branchRepository.findById("b-1")).thenReturn(Mono.just(existing));
+        when(branchRepository.update(any())).thenReturn(Mono.just(updated));
+
+        StepVerifier.create(branchUseCase.updateName("b-1", "New"))
+                .expectNextMatches(b -> "New".equals(b.getName()))
+                .verifyComplete();
+    }
+
+    @Test
+    void updateName_branchNotFound_propagatesError() {
+        when(branchRepository.findById("missing")).thenReturn(Mono.empty());
+
+        StepVerifier.create(branchUseCase.updateName("missing", "New"))
+                .expectError(NoSuchElementException.class)
+                .verify();
+    }
+
+    @Test
+    void updateName_blankName_returnsIllegalArgumentError() {
+        StepVerifier.create(branchUseCase.updateName("b-1", ""))
+                .expectError(IllegalArgumentException.class)
+                .verify();
+    }
 }

@@ -3,6 +3,7 @@ package com.franchise.api;
 import com.franchise.api.dto.AddBranchRequest;
 import com.franchise.api.dto.AddProductRequest;
 import com.franchise.api.dto.CreateFranchiseRequest;
+import com.franchise.api.dto.UpdateNameRequest;
 import com.franchise.api.dto.UpdateStockRequest;
 import com.franchise.model.branch.Branch;
 import com.franchise.model.franchise.Franchise;
@@ -201,5 +202,86 @@ class RouterRestTest {
                 .bodyValue(new UpdateStockRequest(-1))
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void updateFranchiseName_validRequest_returns200() {
+        when(franchiseUseCase.updateName(eq("f-1"), eq("New Name"))).thenReturn(
+                Mono.just(Franchise.builder().id("f-1").name("New Name").build()));
+
+        webTestClient.patch()
+                .uri("/api/v1/franchises/f-1/name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateNameRequest("New Name"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.name").isEqualTo("New Name");
+    }
+
+    @Test
+    void updateFranchiseName_notFound_returns404() {
+        when(franchiseUseCase.updateName(eq("missing"), any()))
+                .thenReturn(Mono.error(new NoSuchElementException("Franchise not found")));
+
+        webTestClient.patch()
+                .uri("/api/v1/franchises/missing/name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateNameRequest("X"))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void updateBranchName_validRequest_returns200() {
+        when(branchUseCase.updateName(eq("b-1"), eq("New Branch"))).thenReturn(
+                Mono.just(Branch.builder().id("b-1").name("New Branch").franchiseId("f-1").build()));
+
+        webTestClient.patch()
+                .uri("/api/v1/branches/b-1/name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateNameRequest("New Branch"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.name").isEqualTo("New Branch");
+    }
+
+    @Test
+    void updateBranchName_notFound_returns404() {
+        when(branchUseCase.updateName(eq("missing"), any()))
+                .thenReturn(Mono.error(new NoSuchElementException("Branch not found")));
+
+        webTestClient.patch()
+                .uri("/api/v1/branches/missing/name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateNameRequest("X"))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void updateProductName_validRequest_returns200() {
+        when(productUseCase.updateName(eq("p-1"), eq("New Product"))).thenReturn(
+                Mono.just(Product.builder().id("p-1").name("New Product").stock(10).branchId("b-1").build()));
+
+        webTestClient.patch()
+                .uri("/api/v1/products/p-1/name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateNameRequest("New Product"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.name").isEqualTo("New Product");
+    }
+
+    @Test
+    void updateProductName_notFound_returns404() {
+        when(productUseCase.updateName(eq("missing"), any()))
+                .thenReturn(Mono.error(new NoSuchElementException("Product not found")));
+
+        webTestClient.patch()
+                .uri("/api/v1/products/missing/name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateNameRequest("X"))
+                .exchange()
+                .expectStatus().isNotFound();
     }
 }

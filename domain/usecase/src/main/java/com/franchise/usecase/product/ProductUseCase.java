@@ -18,6 +18,15 @@ public class ProductUseCase {
         return productRepository.delete(productId);
     }
 
+    public Mono<Product> updateName(String id, String name) {
+        if (name == null || name.isBlank()) {
+            return Mono.error(new IllegalArgumentException("Product name cannot be blank"));
+        }
+        return productRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Product not found: " + id)))
+                .flatMap(product -> productRepository.update(product.toBuilder().name(name).build()));
+    }
+
     public Mono<Product> updateStock(String productId, int stock) {
         if (stock < 0) {
             return Mono.error(new IllegalArgumentException("Stock cannot be negative"));
