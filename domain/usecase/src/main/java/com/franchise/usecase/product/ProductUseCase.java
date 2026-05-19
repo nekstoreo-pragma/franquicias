@@ -14,6 +14,10 @@ public class ProductUseCase {
     private final BranchRepository branchRepository;
     private final ProductRepository productRepository;
 
+    public Mono<Void> removeProduct(String productId) {
+        return productRepository.delete(productId);
+    }
+
     public Mono<Product> addProduct(String branchId, Product product) {
         if (product.getStock() < 0) {
             return Mono.error(new IllegalArgumentException("Stock cannot be negative"));
