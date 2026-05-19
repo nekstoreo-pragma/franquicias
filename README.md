@@ -124,6 +124,19 @@ docker run -d --name dynamodb-local -p 8000:8000 \
 
 The API is available at `http://localhost:8080`.
 
+### Run with Docker
+
+```bash
+# Build the image
+docker build -t franchise-api .
+
+# Run (local profile connects to DynamoDB Local)
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=local \
+  -e AWS_DYNAMODB_ENDPOINT=http://host.docker.internal:8000 \
+  franchise-api
+```
+
 ### Build
 
 ```bash
