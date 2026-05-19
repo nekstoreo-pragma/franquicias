@@ -153,4 +153,14 @@ class RouterRestTest {
                 .exchange()
                 .expectStatus().isBadRequest();
     }
+
+    @Test
+    void deleteProduct_returns204() {
+        when(productUseCase.removeProduct("p-1")).thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/api/v1/products/p-1")
+                .exchange()
+                .expectStatus().isNoContent();
+    }
 }

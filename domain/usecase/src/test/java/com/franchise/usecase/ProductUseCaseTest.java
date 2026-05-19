@@ -68,4 +68,14 @@ class ProductUseCaseTest {
                 .expectError(IllegalArgumentException.class)
                 .verify();
     }
+
+    @Test
+    void removeProduct_callsDelete() {
+        when(productRepository.delete("p-1")).thenReturn(Mono.empty());
+
+        StepVerifier.create(productUseCase.removeProduct("p-1"))
+                .verifyComplete();
+
+        verify(productRepository).delete("p-1");
+    }
 }
