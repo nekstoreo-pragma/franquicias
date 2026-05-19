@@ -48,6 +48,24 @@ public class RouterRest {
             method = {RequestMethod.PATCH},
             beanClass = ProductHandler.class,
             beanMethod = "updateProductStock"
+        ),
+        @RouterOperation(
+            path = "/api/v1/franchises/{id}/name",
+            method = {RequestMethod.PATCH},
+            beanClass = FranchiseHandler.class,
+            beanMethod = "updateFranchiseName"
+        ),
+        @RouterOperation(
+            path = "/api/v1/branches/{id}/name",
+            method = {RequestMethod.PATCH},
+            beanClass = BranchHandler.class,
+            beanMethod = "updateBranchName"
+        ),
+        @RouterOperation(
+            path = "/api/v1/products/{id}/name",
+            method = {RequestMethod.PATCH},
+            beanClass = ProductHandler.class,
+            beanMethod = "updateProductName"
         )
     })
     @Bean
@@ -63,6 +81,12 @@ public class RouterRest {
                 .andRoute(DELETE("/api/v1/products/{productId}"),
                         productHandler::deleteProduct)
                 .andRoute(PATCH("/api/v1/products/{productId}/stock").and(accept(MediaType.APPLICATION_JSON)),
-                        productHandler::updateProductStock);
+                        productHandler::updateProductStock)
+                .andRoute(PATCH("/api/v1/franchises/{id}/name").and(accept(MediaType.APPLICATION_JSON)),
+                        franchiseHandler::updateFranchiseName)
+                .andRoute(PATCH("/api/v1/branches/{id}/name").and(accept(MediaType.APPLICATION_JSON)),
+                        branchHandler::updateBranchName)
+                .andRoute(PATCH("/api/v1/products/{id}/name").and(accept(MediaType.APPLICATION_JSON)),
+                        productHandler::updateProductName);
     }
 }

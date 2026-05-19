@@ -1,6 +1,7 @@
 package com.franchise.api;
 
 import com.franchise.api.dto.AddProductRequest;
+import com.franchise.api.dto.UpdateNameRequest;
 import com.franchise.api.dto.UpdateStockRequest;
 import com.franchise.model.product.Product;
 import com.franchise.usecase.product.ProductUseCase;
@@ -42,6 +43,19 @@ public class ProductHandler {
                         ServerResponse.status(HttpStatus.NOT_FOUND).bodyValue("Product not found"))
                 .onErrorResume(IllegalArgumentException.class, e ->
                         ServerResponse.badRequest().bodyValue(e.getMessage()))
+                .onErrorResume(e -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .bodyValue("An error occurred"));
+    }
+
+    public Mono<ServerResponse> updateProductName(ServerRequest request) {
+        String id = request.pathVariable("id");
+        return request.bodyToMono(UpdateNameRequest.class)
+                .flatMap(req -> productUseCase.updateName(id, req.name())
+                        .flatMap(updated -> ServerResponse.ok().bodyValue(updated)))
+                .onErrorResume(IllegalArgumentException.class, e ->
+                        ServerResponse.badRequest().bodyValue(e.getMessage()))
+                .onErrorResume(NoSuchElementException.class, e ->
+                        ServerResponse.status(HttpStatus.NOT_FOUND).bodyValue("Product not found"))
                 .onErrorResume(e -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .bodyValue("An error occurred"));
     }
