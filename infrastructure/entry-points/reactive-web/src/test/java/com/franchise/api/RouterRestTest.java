@@ -3,6 +3,7 @@ package com.franchise.api;
 import com.franchise.api.dto.AddBranchRequest;
 import com.franchise.api.dto.AddProductRequest;
 import com.franchise.api.dto.CreateFranchiseRequest;
+import com.franchise.api.dto.UpdateStockRequest;
 import com.franchise.model.branch.Branch;
 import com.franchise.model.franchise.Franchise;
 import com.franchise.model.product.Product;
@@ -162,5 +163,43 @@ class RouterRestTest {
                 .uri("/api/v1/products/p-1")
                 .exchange()
                 .expectStatus().isNoContent();
+    }
+
+    @Test
+    void updateProductStock_validRequest_returns200() {
+        Product updated = Product.builder().id("p-1").name("Burger").stock(50).branchId("b-1").build();
+        when(productUseCase.updateStock(eq("p-1"), eq(50))).thenReturn(Mono.just(updated));
+
+        webTestClient.patch()
+                .uri("/api/v1/products/p-1/stock")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateStockRequest(50))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.stock").isEqualTo(50);
+    }
+
+    @Test
+    void updateProductStock_productNotFound_returns404() {
+        when(productUseCase.updateStock(eq("missing"), eq(10)))
+                .thenReturn(Mono.error(new NoSuchElementException("Product not found")));
+
+        webTestClient.patch()
+                .uri("/api/v1/products/missing/stock")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateStockRequest(10))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void updateProductStock_negativeStock_returns400() {
+        webTestClient.patch()
+                .uri("/api/v1/products/p-1/stock")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UpdateStockRequest(-1))
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 }
