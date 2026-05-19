@@ -98,6 +98,34 @@ class ProductUseCaseTest {
     }
 
     @Test
+    void updateName_productFound_returnsUpdated() {
+        Product existing = Product.builder().id("p-1").name("Old").stock(10).branchId("b-1").build();
+        Product updated = existing.toBuilder().name("New").build();
+        when(productRepository.findById("p-1")).thenReturn(Mono.just(existing));
+        when(productRepository.update(any())).thenReturn(Mono.just(updated));
+
+        StepVerifier.create(productUseCase.updateName("p-1", "New"))
+                .expectNextMatches(p -> "New".equals(p.getName()))
+                .verifyComplete();
+    }
+
+    @Test
+    void updateName_productNotFound_propagatesError() {
+        when(productRepository.findById("missing")).thenReturn(Mono.empty());
+
+        StepVerifier.create(productUseCase.updateName("missing", "New"))
+                .expectError(NoSuchElementException.class)
+                .verify();
+    }
+
+    @Test
+    void updateName_blankName_returnsIllegalArgumentError() {
+        StepVerifier.create(productUseCase.updateName("p-1", ""))
+                .expectError(IllegalArgumentException.class)
+                .verify();
+    }
+
+    @Test
     void removeProduct_callsDelete() {
         when(productRepository.delete("p-1")).thenReturn(Mono.empty());
 
