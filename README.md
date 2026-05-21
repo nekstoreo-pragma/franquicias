@@ -119,7 +119,7 @@ docker run -d --name dynamodb-local -p 8000:8000 \
 **3. Start the application**
 
 ```bash
-./gradlew bootRun
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 The API is available at `http://localhost:8080`.
@@ -134,6 +134,7 @@ docker build -t franchise-api .
 docker run -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=local \
   -e AWS_DYNAMODB_ENDPOINT=http://host.docker.internal:8000 \
+  --add-host=host.docker.internal:host-gateway \
   franchise-api
 ```
 
